@@ -31,12 +31,18 @@ void setup() {
     Serial.printf("WiFi Failed!\n");
     return;
   }
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
   setup_blink();
   setup_handlers();
 }
 
 unsigned long lastTimeLog = 0;
-unsigned long delayLog = 5000;
+unsigned long delayLog = 25000;
+
+unsigned long lastTimeScan = 0;
+unsigned long delayScan = 5000;
 
 void loop() {
   if (shouldReboot) {
@@ -47,7 +53,11 @@ void loop() {
   send_time();
 
   blink();
-  checkScan();
+
+  if (timerExpired(lastTimeScan, delayScan)) {
+    lastTimeScan = millis();
+    checkScan();
+  }
 
   if (timerExpired(lastTimeLog, delayLog)) {
     lastTimeLog = millis();
@@ -56,5 +66,4 @@ void loop() {
       Serial.println(WiFi.localIP());
     }
   }
-
 }

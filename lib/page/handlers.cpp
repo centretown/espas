@@ -1,6 +1,9 @@
 #include "handlers.h"
 #include "page.h"
 
+#include <mutex>
+#include <vector>
+
 #include <ESPAsyncWebServer.h>
 
 AsyncWebServer server(80);
@@ -37,34 +40,51 @@ void handleRSSI(AsyncWebServerRequest *request) {
   request->send(200, "text/html", wrapRSSI());
 }
 
-static AsyncWebServerRequestPtr requestPtr;
+static std::vector<AsyncWebServerRequestPtr> requestPtrs;
+static std::mutex resquestMutex;
 static String scanStr;
 static bool scanning = false;
 
 void handleWifiScan(AsyncWebServerRequest *request) {
-  if (!scanning) {
-    requestPtr = request->pause();
-    scanning = true;
-  }
+  // resquestMutex.lock();
+  requestPtrs.push_back(request->pause());
+  Serial.printf("requestPtr.added %d\n", requestPtrs.size());
+  // resquestMutex.unlock();
 }
 
 void checkScan() {
-  if (!scanning) {
-    return;
-  }
-  if (requestPtr.expired()) {
-    scanning = false;
+  // if (!scanning) {
+  //   return;
+  // }
+
+  // scanning = false;
+
+  if (requestPtrs.size() < 1) {
     return;
   }
 
+  // this takes a while
   String str = wrapWifiScan();
 
-  if (!requestPtr.expired()) {
+  resquestMutex.lock();
+  int count = 0;
+  for (const auto &requestPtr : requestPtrs) {
+
+    if (requestPtr.expired()) {
+      Serial.printf("requestPtr.expired %d\n", count);
+      continue;
+    }
+
     if (auto request = requestPtr.lock()) {
       request->send(200, "text/html", str);
-      scanning = false;
+      Serial.printf("requestPtr.send %d\n", count);
     }
+
+    count++;
   }
+
+  requestPtrs.clear();
+  resquestMutex.unlock();
 }
 
 void handleSensors(AsyncWebServerRequest *request) {
