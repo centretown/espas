@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+for arg in "$@"
+do
+    echo $arg
+    echo '#include <Arduino.h>' > $arg.html.h
+    echo 'const String pageHtml' >> $arg.html.h
+    # echo -n $arg >> $arg.html.h
+    echo '= R"~(' >> $arg.html.h
+    cat $arg.html | tr -s '[:blank:]' >> $arg.html.h
+    echo  ')~";'  >> $arg.html.h
+done
