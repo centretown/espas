@@ -14,6 +14,14 @@
 #include "blink.h"
 #include "handlers.h"
 
+#ifdef USE_ROTARY
+#include "rotary.h"
+#endif
+
+#ifdef USE_BLE
+#include "ble.h"
+#endif
+
 // credentials.cpp (ignored by git)
 // const char *ssid = "myssid";
 // const char *password = "mypassword";
@@ -25,6 +33,11 @@ bool shouldReboot = false;
 
 void setup() {
   Serial.begin(115200);
+  // configure encoder pins as inputs
+  #ifdef USE_ROTARY
+    rotary_setup();
+  #endif
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -36,6 +49,9 @@ void setup() {
 
   setup_blink();
   setup_handlers();
+  #ifdef USE_BLE
+    ble_setup();
+  #endif
 }
 
 unsigned long lastTimeLog = 0;
@@ -50,9 +66,18 @@ void loop() {
     delay(100);
     ESP.restart();
   }
-  send_time();
+
+  // send_time();
 
   blink();
+
+  #ifdef USE_ROTARY
+    rotary_loop();
+  #endif
+
+  #ifdef USE_BLE
+    ble_loop();
+  #endif
 
   if (timerExpired(lastTimeScan, delayScan)) {
     lastTimeScan = millis();
