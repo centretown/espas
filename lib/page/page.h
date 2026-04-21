@@ -7,7 +7,9 @@ String wrapGrid(String content);
 String wrapSensors();
 String wrapWiFi();
 String wrapRSSI();
+String wrapRSSIValue();
 String wrapWifiScan();
+String wrapLEDValues(int id, String color);
 
 extern const String pageHtml;
 
@@ -42,10 +44,7 @@ template <typename T> String wrapCard(String title, T value) {
 template <typename T> String wrapValue(String id, String title, T value) {
   char valueDiv[128];
   snprintf(valueDiv, sizeof(valueDiv), valueHtmlID, id);
-  String str = labelHtml;
-  str += title;
-  str += endLabel;
-  str += valueDiv;
+  String str = valueDiv;
   str += value;
   str += endDiv;
   return str;

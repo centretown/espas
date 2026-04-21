@@ -53,6 +53,11 @@ const String pageHtml
  integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
  crossorigin="anonymous"
  ></script>
+ <script
+ src="https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.4"
+ integrity="sha384-1RwI/nvUSrMRuNj7hX1+27J8XDdCoSLf0EjEyF69nacuWyiJYoQ/j39RT1mSnd2G"
+ crossorigin="anonymous"
+ ></script>
  <script>
  window.onload = sensors;
  var sensors_loaded = false;
@@ -153,9 +158,15 @@ const String pageHtml
  </header>
 
  <!-- Sensors Section -->
+ <span id="events" hx-ext="ws" ws-connect="/ws">
  <div id="sensors_heading" class="w3-padding-64 w3-content">
+ <span id="ws-status-text"></span>
+ <span id="ws-status-menu"></span>
  <h2 class="w3-text-light-grey">
- <i class="fa fa-thermometer-three-quarters w3-xxlarge"></i>
+ <i
+ id="ws-status"
+ class="fa fa-thermometer-three-quarters w3-xxlarge w3-text-yellow"
+ ></i>
  Sensors
  </h2>
  <hr style="width: 200px" class="w3-opacity" />
@@ -163,6 +174,7 @@ const String pageHtml
  <!-- Grid for sensors -->
  <div id="sensors" hx-swap="innerHTML"></div>
  </div>
+ </span>
  <!-- End Sensors Section -->
 
  <!-- About Section -->
@@ -271,7 +283,7 @@ const String pageHtml
 
  <div class="w3-section">
  <a
- href="https://github.com/centretown/minib.git"
+ href="https://github.com/centretown/espas#"
  target="_blank"
  >Source code</a
  >
@@ -310,6 +322,50 @@ const String pageHtml
 
  <!-- END PAGE CONTENT -->
  </div>
+
+ <script defer>
+ let wsstat = document.getElementById("ws-status");
+ let wsmenu = document.getElementById("ws-status-menu");
+
+ // htmx:wsConnecting
+ // htmx:wsError
+
+ let socket;
+ let elt;
+
+ let status_connected = "w3-text-green";
+ let status_disconnected = "w3-text-yellow";
+ let status_error = "w3-text-red";
+ let current_status = status_disconnected;
+
+ function updateSocketStatus(newStatus, message) {
+ htmx.removeClass(wsstat, current_status);
+ current_status = newStatus;
+ htmx.addClass(wsstat, current_status);
+ wsmenu.innerText = message;
+ console.log(message);
+ }
+
+ document.addEventListener("visibilitychange", function (evt) {
+ console.log("visibilitychange", document.visibilityState);
+ if (socket) {
+ socket.send(document.visibilityState, elt);
+ }
+ });
+
+ document.body.addEventListener("htmx:wsOpen", function (evt) {
+ socket = evt.detail.socketWrapper;
+ elt = evt.detail.elt;
+ updateSocketStatus(status_connected, "connected");
+ });
+
+ document.body.addEventListener("htmx:wsError", function (evt) {
+ updateSocketStatus(status_error, "error");
+ });
+ document.body.addEventListener("htmx:wsClose", function (evt) {
+ updateSocketStatus(status_disconnected, "disconnected");
+ });
+ </script>
  </body>
 </html>
 )~";

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-#cd /home/dave/src/minib/lib/page
-#./pack esp32_s3 esp32_s3_mini
-#cd ../..
+cd /home/dave/src/espas/lib/page
+./pack esp32_s3_mini
+# ./pack esp32_s3 esp32_s3_mini
+cd ../..
 pio run -t upload
 pio device monitor
 # pio run

@@ -47,6 +47,9 @@ const char *gridId = "<div id=\"%s\" class=\"w3-grid w3-margin\" "
                      "style=\"gap:8px;grid-template-columns:repeat(auto-fit,"
                      "minmax(150px,1fr))\">";
 
+const char *ledFormat =
+    "<i id=\"ws-led-%d\" class=\"fa fa-circle w3-large w3-text-%s\"></i>";
+
 String wrapHTML(String begin, String content, String end) {
   String str = begin;
   str += content;
@@ -64,6 +67,7 @@ String wrapSpinner(String id) {
 }
 
 String wrapGrid(String content) { return wrapHTML(gridHtml, content, endDiv); }
+String wrapLabel(String title) { return wrapHTML(labelHtml, title, endLabel); }
 
 String wrapGridId(String id, String content) {
   char gridBuffer[256];
@@ -73,8 +77,29 @@ String wrapGridId(String id, String content) {
 
 String wrapHeader(String title) { return wrapHTML(titleHtml, title, endDiv); }
 
+String wrapRSSIValue() {
+  return wrapValue("rssi-stream", "Signal Strength (RSSI)", WiFi.RSSI());
+}
+
 String wrapRSSI() {
-  String str = wrapValue("rssi", "Signal Strength (RSSI)", WiFi.RSSI());
+  String str = wrapLabel("Signal Strength (RSSI)");
+  str += wrapRSSIValue();
+  return str;
+}
+
+String wrapCardItems(String title, int value) {
+  String str = cardHtml;
+
+  str += labelHtml;
+  str += title;
+  str += endLabel;
+
+  str += valueHtml;
+  str += value;
+  str += endDiv;
+
+  str += endDiv;
+
   return str;
 }
 
@@ -125,10 +150,16 @@ String wrapWiFi() {
 
 #ifdef USE_BLE
 String BLEHeader() {
-    String ble_str = "Bluetooth LE: " + ble_server();
-    return ble_str;
+  String ble_str = "Bluetooth LE: " + ble_server();
+  return ble_str;
 }
 #endif
+
+String wrapLEDValues(int id, String color) {
+  char buffer[128];
+  snprintf(buffer, sizeof(buffer), ledFormat, id, color);
+  return String(buffer);
+}
 
 String wrapSensors() {
   // String str = "<div id=\"sensors\">";
@@ -139,6 +170,7 @@ String wrapSensors() {
   str += wrapCard("Detail", ble_detail());
 #endif
   str += wrapHeader("LED");
+  str += wrapCard("Status: ", wrapLEDValues(0, "red"));
   // str += wrapHeader("Temperature");
   return str;
 }

@@ -42,7 +42,7 @@ unsigned long lastTimeLog = 0;
 unsigned long delayLog = 25000;
 
 unsigned long lastTimeScan = 0;
-unsigned long delayScan = 5000;
+unsigned long delayScan = 1000;
 
 void loop() {
   if (shouldReboot) {
@@ -56,6 +56,8 @@ void loop() {
 
   if (timerExpired(lastTimeScan, delayScan)) {
     lastTimeScan = millis();
+    wsCleanUp();
+    wsCheckSensors();
     checkScan();
   }
 

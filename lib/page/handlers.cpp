@@ -6,9 +6,10 @@
 
 #include <ESPAsyncWebServer.h>
 
-AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");           // access at ws://[esp ip]/ws
-AsyncEventSource events("/events"); // event source (Server-Sent events)
+static AsyncWebServer server(80);
+static AsyncWebSocketMessageHandler wsHandler;
+static AsyncWebSocket ws("/ws");           // access at ws://[esp ip]/ws
+static AsyncEventSource events("/events"); // event source (Server-Sent events)
 
 void onRequest(AsyncWebServerRequest *request) {
   // Handle Unknown Request
@@ -28,6 +29,7 @@ void onUpload(AsyncWebServerRequest *request, String filename, size_t index,
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
              AwsEventType type, void *arg, uint8_t *data, size_t len) {
   // Handle WebSocket event
+  Serial.printf("event received\n");
 }
 
 void handleOnConnect(AsyncWebServerRequest *request) {
@@ -40,51 +42,34 @@ void handleRSSI(AsyncWebServerRequest *request) {
   request->send(200, "text/html", wrapRSSI());
 }
 
-static std::vector<AsyncWebServerRequestPtr> requestPtrs;
-static std::mutex resquestMutex;
 static String scanStr;
 static bool scanning = false;
+static AsyncWebServerRequestPtr requestPtr;
 
 void handleWifiScan(AsyncWebServerRequest *request) {
-  // resquestMutex.lock();
-  requestPtrs.push_back(request->pause());
-  Serial.printf("requestPtr.added %d\n", requestPtrs.size());
-  // resquestMutex.unlock();
+  requestPtr = request->pause();
+  scanning = true;
+  Serial.println("WiFi scan requested.");
 }
 
 void checkScan() {
-  // if (!scanning) {
-  //   return;
-  // }
-
-  // scanning = false;
-
-  if (requestPtrs.size() < 1) {
+  if (!scanning) {
     return;
   }
 
+  scanning = false;
+  if (requestPtr.expired()) {
+    Serial.printf("WiFi scan request expired.\n");
+    return;
+  }
   // this takes a while
+  Serial.printf("WiFi scan in progress...\n");
   String str = wrapWifiScan();
 
-  resquestMutex.lock();
-  int count = 0;
-  for (const auto &requestPtr : requestPtrs) {
-
-    if (requestPtr.expired()) {
-      Serial.printf("requestPtr.expired %d\n", count);
-      continue;
-    }
-
-    if (auto request = requestPtr.lock()) {
-      request->send(200, "text/html", str);
-      Serial.printf("requestPtr.send %d\n", count);
-    }
-
-    count++;
+  if (auto request = requestPtr.lock()) {
+    request->send(200, "text/html", str);
+    Serial.printf("WiFi scan complete.\n");
   }
-
-  requestPtrs.clear();
-  resquestMutex.unlock();
 }
 
 void handleSensors(AsyncWebServerRequest *request) {
@@ -92,10 +77,49 @@ void handleSensors(AsyncWebServerRequest *request) {
   request->send(200, "text/html", wrapSensors());
 }
 
+const char *statusTextFmt = "<span id=\"ws-status-text\">%s</span>";
+// setup_handlers
+//
 void setup_handlers() {
+  wsHandler.onConnect([](AsyncWebSocket *server, AsyncWebSocketClient *client) {
+    Serial.printf("Client %" PRIu32 " connected\n", client->id());
+    server->textAll("<span id=\"ws-status-text\">Client (#" +
+                    String(client->id()) + ") connected</span>");
+    // server->printfAll(statusTextFmt, "Connected: client #" +
+    // String(client->id()));
+  });
+
+  wsHandler.onDisconnect([](AsyncWebSocket *server, uint32_t clientId) {
+    Serial.printf("Client %" PRIu32 " disconnected\n", clientId);
+    server->textAll("<span id=\"ws-status-text\">Client (#" + String(clientId) +
+                    ") disconnected</span>");
+    // server->textAll("Client " + String(clientId) + " disconnected");
+    // server->printfAll(statusTextFmt, "Disconnected: client #" + clientId));
+  });
+
+  wsHandler.onError([](AsyncWebSocket *server, AsyncWebSocketClient *client,
+                       uint16_t errorCode, const char *reason, size_t len) {
+    Serial.printf("Client %" PRIu32 " error: %" PRIu16 ": %s\n", client->id(),
+                  errorCode, reason);
+  });
+
+  wsHandler.onMessage([](AsyncWebSocket *server, AsyncWebSocketClient *client,
+                         const uint8_t *data, size_t len) {
+    Serial.printf("Client %" PRIu32 " data: %s\n", client->id(),
+                  (const char *)data);
+    server->textAll(data, len);
+  });
+
+  wsHandler.onFragment([](AsyncWebSocket *server, AsyncWebSocketClient *client,
+                          const AwsFrameInfo *frameInfo, const uint8_t *data,
+                          size_t len) {
+    Serial.printf("Client %" PRIu32 " fragment %" PRIu32 ": %s\n", client->id(),
+                  frameInfo->num, (const char *)data);
+  });
 
   // attach AsyncWebSocket
-  ws.onEvent(onEvent);
+  ws.onEvent(wsHandler.eventHandler());
+  //
   server.addHandler(&ws);
 
   // attach AsyncEventSource
@@ -180,7 +204,16 @@ void setup_handlers() {
 }
 
 void send_time() {
-  static char temp[128];
+  char temp[128];
   sprintf(temp, "Seconds since boot: %u", millis() / 1000);
   events.send(temp, "time"); // send event "time"
+}
+
+void wsCleanUp() { ws.cleanupClients(); }
+
+void wsCheckSensors() { ws.textAll(wrapRSSIValue()); }
+
+void wsCheckLED(int id, String color) {
+  // Serial.println(wrapLEDValues(id, color));
+  ws.textAll(wrapLEDValues(id, color));
 }
