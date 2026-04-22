@@ -33,10 +33,11 @@ bool shouldReboot = false;
 
 void setup() {
   Serial.begin(115200);
-  // configure encoder pins as inputs
-  #ifdef USE_ROTARY
-    rotary_setup();
-  #endif
+  delay(500);
+// configure encoder pins as inputs
+#ifdef USE_ROTARY
+  rotary_setup();
+#endif
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -49,9 +50,9 @@ void setup() {
 
   setup_blink();
   setup_handlers();
-  #ifdef USE_BLE
-    ble_setup();
-  #endif
+#ifdef USE_BLE
+  ble_setup();
+#endif
 }
 
 unsigned long lastTimeLog = 0;
@@ -67,17 +68,15 @@ void loop() {
     ESP.restart();
   }
 
-  // send_time();
-
   blink();
 
-  #ifdef USE_ROTARY
-    rotary_loop();
-  #endif
+#ifdef USE_ROTARY
+  rotary_loop();
+#endif
 
-  #ifdef USE_BLE
-    ble_loop();
-  #endif
+#ifdef USE_BLE
+  ble_loop();
+#endif
 
   if (timerExpired(lastTimeScan, delayScan)) {
     lastTimeScan = millis();

@@ -13,42 +13,15 @@
 #include "esp32_s3.html.h"
 #endif
 
-const char *titleHtml = "<div class=\"w3-padding w3-dark-grey w3-margin-top\">";
-const char *titleAction =
-    "<div class=\"w3-padding w3-dark-grey w3-margin-top w3-hover-cobalt "
-    "w3-border w3-border-blue\" hx-get=\"/%s\" "
-    "hx-swap=\"none\" hx-indicator=\"#%s\" hx-select-oob=\"#%s\">";
-const char *spinner =
-    "<span id=\"%s\" ><i class=\"w3-margin-left htmx-indicator fa fa-spinner "
-    "fa-spin fa-2x fa-fw\"></i></span>";
-// const char *titleAction = "<div class=\"w3-padding w3-dark-grey w3-margin-top
-// "
-//                           "w3-border w3-border-blue\" hx-get=\"/%s\" "
-//                           "hx-swap-oob=\"#%s\" target=\"#%s\">";
 const char *cardHtml = "<div class=\"w3-card w3-padding w3-asphalt\">";
-
-const char *cardAction = "<div class=\"w3-card w3-padding w3-asphalt "
-                         "w3-hover-cobalt w3-border w3-border-blue\" "
-                         "hx-get=\"/%s\" hx-swap=\"innerHTML\">";
-
 const char *labelHtml = "<label class=\"\">";
 const char *endLabel = "</label>";
 const char *valueHtml =
     "<div class=\"w3-text-amber\" style=\"margin-left:1rem;\">";
-const char *valueHtmlID =
-    "<div id=\"%s\" class=\"w3-text-amber\" style=\"margin-left:1rem;\">";
 const char *endSpan = "</span>";
 const char *endDiv = "</div>";
-const char *gridHtml = "<div class=\"w3-grid w3-margin\" "
-                       "style=\"gap:8px;grid-template-columns:repeat(auto-fit,"
-                       "minmax(150px,1fr))\">";
-
-const char *gridId = "<div id=\"%s\" class=\"w3-grid w3-margin\" "
-                     "style=\"gap:8px;grid-template-columns:repeat(auto-fit,"
-                     "minmax(150px,1fr))\">";
-
-const char *ledFormat =
-    "<i id=\"ws-led-%d\" class=\"fa fa-circle w3-large w3-text-%s\"></i>";
+const char *valueHtmlID =
+    "<div id=\"%s\" class=\"w3-text-amber\" style=\"margin-left:1rem;\">";
 
 String wrapHTML(String begin, String content, String end) {
   String str = begin;
@@ -59,32 +32,41 @@ String wrapHTML(String begin, String content, String end) {
 
 String createHTML() { return pageHtml; }
 
+String wrapCardContent(String content) { return cardHtml + content + endDiv; }
+
+const char *spinner =
+    "<span id=\"%s\" ><i class=\"w3-margin-left htmx-indicator fa fa-spinner "
+    "fa-spin fa-2x fa-fw\"></i></span>";
 String wrapSpinner(String id) {
-  char buffer[128];
+  char buffer[160];
   snprintf(buffer, sizeof(buffer), spinner, id);
   String str = buffer;
   return str;
 }
 
+const char *gridHtml = "<div class=\"w3-grid w3-margin\" "
+                       "style=\"gap:8px;grid-template-columns:repeat(auto-fit,"
+                       "minmax(150px,1fr))\">";
 String wrapGrid(String content) { return wrapHTML(gridHtml, content, endDiv); }
+
 String wrapLabel(String title) { return wrapHTML(labelHtml, title, endLabel); }
 
+const char *gridId = "<div id=\"%s\" class=\"w3-grid w3-margin\" "
+                     "style=\"gap:8px;grid-template-columns:repeat(auto-fit,"
+                     "minmax(150px,1fr))\">";
 String wrapGridId(String id, String content) {
-  char gridBuffer[256];
+  char gridBuffer[512];
   snprintf(gridBuffer, sizeof(gridBuffer), gridId, id);
   return wrapHTML(gridBuffer, content, endDiv);
 }
 
+const char *titleHtml = "<div class=\"w3-padding w3-dark-grey w3-margin-top\">";
 String wrapHeader(String title) { return wrapHTML(titleHtml, title, endDiv); }
 
-String wrapRSSIValue() {
-  return wrapValue("rssi-stream", "Signal Strength (RSSI)", WiFi.RSSI());
-}
+String wrapRSSIValue() { return wrapValue("rssi-stream", WiFi.RSSI()); }
 
 String wrapRSSI() {
-  String str = wrapLabel("Signal Strength (RSSI)");
-  str += wrapRSSIValue();
-  return str;
+  return wrapLabel("Signal Strength (RSSI)") + wrapRSSIValue();
 }
 
 String wrapCardItems(String title, int value) {
@@ -103,14 +85,34 @@ String wrapCardItems(String title, int value) {
   return str;
 }
 
+// const char *cardUpdate = "<div id=\"%s\" class=\"w3-card w3-padding
+// w3-asphalt "
+//                          "w3-hover-cobalt w3-border w3-border-green\" >";
+// String wrapUpdateCard(String id, String content) {
+//   char cardDiv[160];
+//   snprintf(cardDiv, sizeof(cardDiv), cardUpdate, id);
+//   String str = cardDiv;
+//   str += content;
+//   str += endDiv;
+//   return str;
+// }
+
+const char *cardAction = "<div class=\"w3-card w3-padding w3-asphalt "
+                         "w3-hover-cobalt w3-border w3-border-blue\" "
+                         "hx-get=\"/%s\" hx-swap=\"innerHTML\">";
 String wrapActionCard(String id, String (*wrapper)()) {
-  char cardDiv[512];
+  char cardDiv[256];
   snprintf(cardDiv, sizeof(cardDiv), cardAction, id);
   String str = cardDiv;
   str += wrapper();
   str += endDiv;
   return str;
 }
+
+const char *titleAction =
+    "<div class=\"w3-padding w3-dark-grey w3-margin-top w3-hover-cobalt "
+    "w3-border w3-border-blue\" hx-get=\"/%s\" "
+    "hx-swap=\"none\" hx-indicator=\"#%s\" hx-select-oob=\"#%s\">";
 
 String wrapActionTitle(String title, String id, String spinId) {
   char div[512];
@@ -155,11 +157,46 @@ String BLEHeader() {
 }
 #endif
 
+const char *ledFormat = "<i id=\"ws-rgb-%d\" class=\"fa fa-circle w3-xlarge\" "
+                        "style=\"color:rgb(%s);\"></i>";
 String wrapLEDValues(int id, String color) {
   char buffer[128];
   snprintf(buffer, sizeof(buffer), ledFormat, id, color);
   return String(buffer);
 }
+
+const char *spanId = "<span id=\"%s\">";
+String wrapSpanId(String id, String content) {
+  char buffer[60];
+  snprintf(buffer, sizeof(buffer), spanId, id);
+  return String(buffer) + content + String(endSpan);
+}
+
+#ifdef USE_ROTARY
+String wrapRotaryDirectionValue(const char *direction) {
+  return wrapSpanId("rdir", String(direction));
+}
+
+String wrapRotaryDirection(const char *direction) {
+  return wrapLabel("Rotary Direction") + wrapRotaryDirectionValue(direction);
+}
+
+String wrapRotaryPositionValue(int position) {
+  return wrapSpanId("rpos", String(position));
+}
+
+String wrapRotaryPosition(int position) {
+  return wrapLabel("Rotary Position") + wrapRotaryPositionValue(position);
+}
+
+String wrapRotaryButtonValue(int button_state) {
+  return wrapSpanId("rbutton", String(button_state));
+}
+
+String wrapRotaryButton(int state) {
+  return wrapLabel("Rotary Button") + wrapRotaryButtonValue(state);
+}
+#endif // USE_ROTARY
 
 String wrapSensors() {
   // String str = "<div id=\"sensors\">";
@@ -167,10 +204,16 @@ String wrapSensors() {
   str += wrapWiFi();
 #ifdef USE_BLE
   str += wrapHeader(BLEHeader());
-  str += wrapCard("Detail", ble_detail());
+  str += wrapGrid(wrapCard("Detail", ble_detail()));
+#endif
+#ifdef USE_ROTARY
+  str += wrapHeader("Rotary");
+  str += wrapGrid(wrapCard("Position", wrapRotaryPositionValue(0)) +
+                  wrapCard("Button", wrapRotaryButtonValue(1)) +
+                  wrapCard("Direction", wrapRotaryDirectionValue("")));
 #endif
   str += wrapHeader("LED");
-  str += wrapCard("Status: ", wrapLEDValues(0, "red"));
+  str += wrapGrid(wrapCard("Status: ", wrapLEDValues(0, "0,0,0")));
   // str += wrapHeader("Temperature");
   return str;
 }

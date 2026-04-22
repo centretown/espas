@@ -1,9 +1,6 @@
 #include "handlers.h"
 #include "page.h"
 
-#include <mutex>
-#include <vector>
-
 #include <ESPAsyncWebServer.h>
 
 static AsyncWebServer server(80);
@@ -217,3 +214,15 @@ void wsCheckLED(int id, String color) {
   // Serial.println(wrapLEDValues(id, color));
   ws.textAll(wrapLEDValues(id, color));
 }
+
+#ifdef USE_ROTARY
+void wsUpdateRotaryDirection(const char *direction) {
+  ws.textAll(wrapRotaryDirectionValue(direction));
+}
+void wsUpdateRotaryPosition(int position) {
+  ws.textAll(wrapRotaryPositionValue(position));
+}
+void wsUpdateRotaryButton(int state) {
+  ws.textAll(wrapRotaryButtonValue(state));
+}
+#endif

@@ -1,7 +1,7 @@
 #include "blink.h"
+#include "handlers.h"
 #include <Arduino.h>
 #include <FastLED.h>
-#include "handlers.h"
 
 UISlider hueSlider("Hue", 128, 0, 255, 1);
 UISlider saturationSlider("Saturation", 255, 0, 255, 1);
@@ -14,8 +14,15 @@ CRGB rgbLed[1];
 
 int ledState = LED_RED;
 
+String currentColor(CRGB rgb) {
+  char buffer[20];
+  snprintf(buffer, sizeof(buffer), "%d,%d,%d", rgb.red, rgb.green, rgb.blue);
+  String str = buffer;
+  return str;
+}
+
 void setup_blink() {
-  FastLED.addLeds<SK6812, ledPin, RGB>(rgbLed, numLeds);
+  FastLED.addLeds<SK6812, ledPin, GRB>(rgbLed, numLeds);
   FastLED.setBrightness(25);
   rgbLed[0] = CRGB::Blue;
   FastLED.show();
@@ -40,27 +47,12 @@ void blink() {
     rgbLed[0] = CRGB::Blue;
     break;
   }
+
   FastLED.show();
 
-  wsCheckLED(0, currentColor());
+  wsCheckLED(0, currentColor(rgbLed[0]));
 
   if (++ledState >= LED_LAST) {
     ledState = LED_RED;
   }
-}
-
-String currentColor() {
-  String str = "white";
-  switch (ledState) {
-  case LED_RED:
-    str = "red";
-    break;
-  case LED_GREEN:
-    str = "green";
-    break;
-  case LED_BLUE:
-    str = "blue";
-    break;
-  }
-  return str;
 }
