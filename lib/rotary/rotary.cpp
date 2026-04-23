@@ -17,19 +17,19 @@ int button_previous = 0;
 int position_previous = -1;
 rotary_direction direction_previous = (rotary_direction)2;
 
-void checkPosition() {
-  int position = rotary.getPosition();
+void checkPosition(ESPRotary &r) {
+  int position = r.getPosition();
   if (position != position_previous) {
     position_previous = position;
     wsUpdateRotaryPosition(position);
   }
 }
 
-void checkDirection() {
-  rotary_direction direction = rotary.getDirection();
+void checkDirection(ESPRotary &r) {
+  rotary_direction direction = r.getDirection();
   if (direction != direction_previous) {
     direction_previous = direction;
-    wsUpdateRotaryDirection(rotary.directionToString(direction).c_str());
+    wsUpdateRotaryDirection(r.directionToString(direction).c_str());
   }
 }
 
@@ -44,9 +44,9 @@ void checkButton() {
 void rotary_setup() {
   Serial.println("\nROTARY SETUP");
   rotary.begin(ROTARY_PIN1, ROTARY_PIN2, CLICKS_PER_STEP);
-  // rotary.setChangedHandler(checkPosition);
-  // rotary.setLeftRotationHandler(checkDirection);
-  // rotary.setRightRotationHandler(checkDirection);
+  rotary.setChangedHandler(checkPosition);
+  rotary.setLeftRotationHandler(checkDirection);
+  rotary.setRightRotationHandler(checkDirection);
   // timer = timerBegin(0, 80, true);
   // timerAttachInterrupt(timer, &handleLoop, true);
   // timerAlarmWrite(timer, 10000, true); // every 0.1 seconds
@@ -60,8 +60,8 @@ void rotary_setup() {
 void rotary_loop() {
   rotary.loop();
   checkButton();
-  checkPosition();
-  checkDirection();
+  // checkPosition();
+  // checkDirection();
 }
 
 #endif

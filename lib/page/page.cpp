@@ -189,8 +189,9 @@ String wrapRotaryPosition(int position) {
   return wrapLabel("Rotary Position") + wrapRotaryPositionValue(position);
 }
 
-String wrapRotaryButtonValue(int button_state) {
-  return wrapSpanId("rbutton", String(button_state));
+String wrapRotaryButtonValue(int state) {
+  String button_state = (state == 1) ? "up" : "down";
+  return wrapSpanId("rbutton", button_state);
 }
 
 String wrapRotaryButton(int state) {
